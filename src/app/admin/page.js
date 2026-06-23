@@ -571,9 +571,15 @@ export default function AdminPage() {
                         </div>
                         
                         <div className="text-end mt-4 pt-3 border-top">
-                          <button className="btn btn-secondary px-4 fw-bold rounded-pill" onClick={() => { setShowModal(false); // สั่งปิดหน้าต่างย่อยทันที
-                            loadAllData();      // รีเฟรชหน้าแดชบอร์ดหลัก  }}>  เสร็จสิ้นกระบวนการอนุมัติ (ปิดหน้านี้)
-                          </button>
+                          <button 
+                          className="btn btn-secondary px-4 fw-bold rounded-pill" 
+                          onClick={() => {
+                            setShowModal(false); 
+                            loadAllData(); // รีเฟรชหน้าแดชบอร์ดหลัก
+                          }}
+                        >
+                          เสร็จสิ้นกระบวนการอนุมัติ (ปิดหน้านี้)
+                        </button>
                         </div>
                       </div>
                     )}
