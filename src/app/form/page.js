@@ -16,10 +16,15 @@ export default function FormPage() {
   const API_URL = "https://script.google.com/macros/s/AKfycbzQO_vdqxqgZBg3ok8KmZ3ETLbFeTY2VAhnEjJH5eee5evZ8lYXY8fVmqenFJPwQ74E/exec";
 
   // โหลดประเภทกิจการ
+  // เพิ่มในไฟล์ app/form/page.jsx
   useEffect(() => {
-    fetch(`${API_URL}?action=getBusinessTypes`)
+    // ดึงเลขที่อัตโนมัติ
+    fetch(`${API_URL}?action=generateRunningNumber`)
       .then(res => res.json())
-      .then(data => setBizTypes(data))
+      .then(data => {
+        // สมมติว่า API ส่งกลับมาเป็น { "number": "1/2569" }
+        document.getElementById("licenseNo").value = data.number;
+      })
       .catch(console.error);
   }, []);
 

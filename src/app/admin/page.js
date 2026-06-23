@@ -220,35 +220,45 @@ export default function AdminPage() {
             </>
           )}
 
-          {/* ----- TAB 2: ประวัติคำขอ ----- */}
+          {/* ----- TAB 2: ประวัติคำขอ (รูปแบบ Cards สวยงาม) ----- */}
           {activeTab === 'history' && (
-            <div className="card table-card shadow-sm border-0">
-              <div className="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 fw-bold text-success"><i className="bi bi-archive-fill me-2"></i>ทะเบียนใบอนุญาต (อนุมัติแล้ว)</h5>
-                <button className="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" onClick={loadHistoryData}><i className="bi bi-arrow-clockwise"></i> รีเฟรช</button>
+            <div>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="fw-bold text-success"><i className="bi bi-archive-fill me-2"></i>ทะเบียนใบอนุญาต (ล่าสุด)</h5>
+                <button className="btn btn-success btn-sm rounded-pill px-3 fw-bold" onClick={loadHistoryData}><i className="bi bi-arrow-clockwise"></i> รีเฟรช</button>
               </div>
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="bg-light"><tr><th className="px-4 py-3 text-muted">เลขที่ใบอนุญาต</th><th className="py-3 text-muted">ชื่อกิจการ</th><th className="py-3 text-muted">วันที่อนุมัติ</th><th className="py-3 text-muted text-center">วันหมดอายุ</th><th className="py-3 text-muted text-center">สถานะ</th><th className="py-3 text-muted text-center">ดูข้อมูล</th></tr></thead>
-                    <tbody>
-                      {isHistoryLoading ? ( <tr><td colSpan="6" className="text-center py-5"><div className="spinner-border text-success spinner-border-sm me-2"></div> กำลังโหลดข้อมูล...</td></tr> ) 
-                      : historyRequests.length === 0 ? ( <tr><td colSpan="6" className="text-center py-5 text-muted fw-bold">ไม่พบข้อมูลประวัติคำขอ (หรือ API ยังไม่พร้อมใช้งาน)</td></tr> ) 
-                      : ( historyRequests.map((item, index) => (
-                          <tr key={index}>
-                            <td className="px-4 fw-bold text-primary">{item.licenseNo || '-'}</td>
-                            <td className="fw-bold">{item.businessName}</td>
-                            <td>{item.approveDate}</td>
-                            <td className="text-center text-danger fw-bold">{item.expireDate}</td>
-                            <td className="text-center"><span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i className="bi bi-check-circle-fill me-1"></i> อนุมัติแล้ว</span></td>
-                            <td className="text-center"><button className="btn btn-sm btn-light text-primary px-3 rounded-pill fw-bold" onClick={() => openManageModal(item.row)}><i className="bi bi-search"></i> เปิดดู</button></td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+
+              {isHistoryLoading ? ( 
+                <div className="text-center py-5"><div className="spinner-border text-success"></div><p className="mt-2 text-muted">กำลังโหลดข้อมูล...</p></div> 
+              ) : historyRequests.length === 0 ? ( 
+                <div className="text-center py-5"><i className="bi bi-inbox fs-1 text-muted"></i><p className="text-muted fw-bold mt-2">ยังไม่มีประวัติการอนุมัติ</p></div> 
+              ) : (
+                <div className="row g-3">
+                  {/* เรียงลำดับจากใหม่สุดไปเก่าสุดโดยใช้ .slice().reverse() หรือ .sort() */}
+                  {[...historyRequests].sort((a, b) => new Date(b.approveDate) - new Date(a.approveDate)).map((item, index) => (
+                    <div key={index} className="col-lg-4 col-md-6">
+                      <div className="card shadow-sm border-0 h-100 p-3 hover-shadow">
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between mb-2">
+                            <span className="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill"><i className="bi bi-check-circle-fill me-1"></i> อนุมัติแล้ว</span>
+                            <small className="text-muted"><i className="bi bi-calendar-event me-1"></i>{item.approveDate}</small>
+                          </div>
+                          <h6 className="fw-bold text-primary mb-1">เลขที่ใบอนุญาต: {item.licenseNo || '-'}</h6>
+                          <h5 className="fw-bold mb-3">{item.businessName}</h5>
+                          <hr/>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <small className="text-muted d-block">วันหมดอายุ</small>
+                              <strong className="text-danger">{item.expireDate}</strong>
+                            </div>
+                            <button className="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold" onClick={() => openManageModal(item.row)}>ดูข้อมูล</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
