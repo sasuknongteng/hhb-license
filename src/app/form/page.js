@@ -53,6 +53,12 @@ export default function FormPage() {
     setSignatories(newSig);
   };
 
+  const handleRemoveSignatory = (index) => {
+    const newSig = [...signatories];
+    newSig.splice(index, 1);
+    setSignatories(newSig);
+  };
+
   const goToSummary = () => {
     const form = document.getElementById('licenseForm');
     if (!form.reportValidity()) return; // เช็คว่ากรอกครบไหม

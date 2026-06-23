@@ -88,7 +88,7 @@ export default function Home() {
         {hasSearched && isLoading && (
           <div className="text-center mt-5">
             <div className="spinner-grow text-primary" style={{ width: "3rem", height: "3rem" }} role="status"></div>
-            <h5 className="mt-3 text-muted">กำลังค้นหาข้อมูล "{keyword}" ...</h5>
+            <h5 className="mt-3 text-muted">กำลังค้นหาข้อมูล &quot;{keyword}&quot; ...</h5>
           </div>
         )}
 
