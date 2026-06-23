@@ -9,17 +9,18 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // สถานะแดชบอร์ด
+  // สถานะข้อมูล
   const [stats, setStats] = useState({ total: '-', pending: '-', approved: '-', expiringSoon: '-', expired: '-' });
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [isTableLoading, setIsTableLoading] = useState(true);
 
   // 🔴 นำ URL ของ Web App วางตรงนี้ 🔴
   const API_URL = "https://script.google.com/macros/s/AKfycbzQO_vdqxqgZBg3ok8KmZ3ETLbFeTY2VAhnEjJH5eee5evZ8lYXY8fVmqenFJPwQ74E/exec";
 
   useEffect(() => {
-    // เช็คว่าเคยล็อกอินค้างไว้หรือไม่
     if (sessionStorage.getItem("isAdminLoggedIn") === "true") {
       setIsLoggedIn(true);
-      loadStats();
+      loadAllData();
     }
   }, []);
 
@@ -35,7 +36,7 @@ export default function AdminPage() {
       if (data.success) {
         sessionStorage.setItem("isAdminLoggedIn", "true");
         setIsLoggedIn(true);
-        loadStats();
+        loadAllData();
       } else {
         setLoginError(true);
       }
@@ -52,13 +53,25 @@ export default function AdminPage() {
     setIsLoggedIn(false);
   };
 
-  const loadStats = async () => {
+  // ฟังก์ชันโหลดข้อมูลทั้งหมด (สถิติ + ตารางรอตรวจสอบ)
+  const loadAllData = async () => {
+    setIsTableLoading(true);
     try {
-      const res = await fetch(`${API_URL}?action=getDashboardStats`);
-      const data = await res.json();
-      setStats(data);
+      // โหลดสถิติ
+      fetch(`${API_URL}?action=getDashboardStats`)
+        .then(res => res.json())
+        .then(data => setStats(data));
+
+      // โหลดรายการรอตรวจสอบ
+      fetch(`${API_URL}?action=getPendingRequests`)
+        .then(res => res.json())
+        .then(data => {
+          setPendingRequests(data);
+          setIsTableLoading(false);
+        });
     } catch (error) {
-      console.error("โหลดสถิติไม่สำเร็จ", error);
+      console.error("โหลดข้อมูลไม่สำเร็จ", error);
+      setIsTableLoading(false);
     }
   };
 
@@ -99,7 +112,7 @@ export default function AdminPage() {
       {/* แถบเมนูด้านซ้าย */}
       <nav className="sidebar">
         <div className="text-center pt-5 pb-3 border-bottom mb-4">
-          <i className="bi bi-building-check text-primary" style={{ fontSize: "2.5rem" }}></i>
+          <i className="bi bi-building-check text-primary" style={{ fontSize: "2.5rem", lineHeight: 1 }}></i>
           <div className="fw-bold fs-5 text-dark mt-2">ระบบใบอนุญาต</div>
           <div className="small text-muted">กิจการที่เป็นอันตรายต่อสุขภาพ</div>
         </div>
@@ -108,8 +121,14 @@ export default function AdminPage() {
         <div className="nav-item-menu"><a className="nav-link-menu text-muted"><i className="bi bi-clock-history"></i> ประวัติคำขอ</a></div>
         <div className="nav-item-menu"><a className="nav-link-menu text-muted"><i className="bi bi-search"></i> ค้นหากิจการ/แผนที่</a></div>
         
+        <div className="nav-item-menu mt-4 pt-4 border-top">
+          <Link href="/form" className="nav-link-menu text-primary" style={{ backgroundColor: "#eef2ff" }}>
+            <i className="bi bi-plus-circle-fill"></i> เพิ่มกิจการใหม่
+          </Link>
+        </div>
+
         <div className="mt-auto p-3 text-center text-muted small border-top bg-light">
-          เทศบาลตำบลหนองเต็ง
+          กองสาธารณสุขและสิ่งแวดล้อม<br/>เทศบาลตำบลหนองเต็ง
         </div>
       </nav>
 
@@ -123,6 +142,7 @@ export default function AdminPage() {
         </header>
 
         <div className="container-fluid p-4">
+          
           {/* การ์ดแสดงสถิติ */}
           <div className="row g-3 mb-4">
             <div className="col-md-4">
@@ -151,14 +171,51 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* พื้นที่สำหรับใส่ตารางรายการคำขอในอนาคต */}
+          {/* ตารางรายการรอตรวจสอบ */}
           <div className="card table-card">
-            <div className="card-header bg-white p-4 border-bottom">
+            <div className="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-center">
               <h5 className="mb-0 fw-bold"><i className="bi bi-list-task text-primary me-2"></i>รายการรอตรวจสอบ</h5>
+              <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={loadAllData}>
+                <i className="bi bi-arrow-clockwise"></i> รีเฟรช
+              </button>
             </div>
-            <div className="card-body p-5 text-center text-muted">
-              <div className="spinner-border text-primary mb-3"></div>
-              <div>เตรียมดึงข้อมูลตารางมาแสดงในขั้นตอนต่อไป...</div>
+            
+            <div className="card-body p-0">
+              <div className="table-responsive">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="px-4 py-3 text-muted">วันที่ส่งคำขอ</th>
+                      <th className="py-3 text-muted">ชื่อผู้ขออนุญาต</th>
+                      <th className="py-3 text-muted">ชื่อกิจการ</th>
+                      <th className="py-3 text-muted text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isTableLoading ? (
+                      <tr><td colSpan="4" className="text-center py-5"><div className="spinner-border text-primary spinner-border-sm me-2"></div> กำลังโหลด...</td></tr>
+                    ) : pendingRequests.length === 0 ? (
+                      <tr><td colSpan="4" className="text-center py-5 text-success fw-bold"><i className="bi bi-check-circle me-1"></i> ไม่มีคำขอค้างตรวจสอบ</td></tr>
+                    ) : (
+                      pendingRequests.map((item, index) => (
+                        <tr key={index}>
+                          <td className="px-4">{item.timestamp}</td>
+                          <td className="fw-bold">{item.applicantName}</td>
+                          <td>{item.businessName}</td>
+                          <td className="text-center">
+                            <button 
+                              className="btn btn-sm btn-primary px-3 rounded-pill" 
+                              onClick={() => alert(`กำลังพัฒนาระบบจัดการคำขอ สำหรับแถวที่: ${item.row}`)}
+                            >
+                              จัดการคำขอ
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           
