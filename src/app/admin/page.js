@@ -524,11 +524,7 @@ export default function AdminPage() {
                         </div>
                         
                         <h6 className="fw-bold text-muted border-bottom pb-2 mb-3">ลงทะเบียนบันทึกเลขหลักฐานใบเสร็จ (หลังจากผู้ประกอบการจ่ายเงินแล้ว)</h6>
-                        <div className="row g-3">
-                          <div className="col-md-4"><label className="form-label small">ใบเสร็จเล่มที่</label><input type="text" className="form-control" name="receiptBook" value={formData.receiptBook} onChange={handleFormChange} /></div>
-                          <div className="col-md-4"><label className="form-label small">ใบเสร็จเลขที่</label><input type="text" className="form-control" name="receiptNo" value={formData.receiptNo} onChange={handleFormChange} /></div>
-                          <div className="col-md-4"><label className="form-label small">วันที่ออกใบเสร็จ</label><input type="date" className="form-control" name="receiptDate" value={formData.receiptDate} onChange={handleFormChange} /></div>
-                        </div>
+                        ใบเสร็จเล่มที่
                         
                         <div className="text-end mt-4 pt-3 border-top">
                           <button className="btn btn-success px-4 fw-bold rounded-pill" onClick={() => saveStepData('savePaymentData', 'ลงบันทึกใบเสร็จค่าธรรมเนียมเข้าระบบเรียบร้อย!', 3)} disabled={isLoading}>
@@ -575,8 +571,8 @@ export default function AdminPage() {
                         </div>
                         
                         <div className="text-end mt-4 pt-3 border-top">
-                          <button className="btn btn-secondary px-4 fw-bold rounded-pill" onClick={() => saveStepData('saveInspectionData', 'อนุมัติปิดเคสเรียบร้อย!', 'close')}>
-                            เสร็จสิ้นกระบวนการอนุมัติ (ปิดหน้านี้)
+                          <button className="btn btn-secondary px-4 fw-bold rounded-pill" onClick={() => { setShowModal(false); // สั่งปิดหน้าต่างย่อยทันที
+                            loadAllData();      // รีเฟรชหน้าแดชบอร์ดหลัก  }}>  เสร็จสิ้นกระบวนการอนุมัติ (ปิดหน้านี้)
                           </button>
                         </div>
                       </div>
