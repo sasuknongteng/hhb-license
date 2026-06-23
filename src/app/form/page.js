@@ -13,7 +13,7 @@ export default function FormPage() {
   const mapRef = useRef(null);
 
   // 🔴 นำ URL ของ Web App วางตรงนี้ 🔴
-  const API_URL = "YOUR_WEB_APP_URL_HERE";
+  const API_URL = "https://script.google.com/macros/s/AKfycbzQO_vdqxqgZBg3ok8KmZ3ETLbFeTY2VAhnEjJH5eee5evZ8lYXY8fVmqenFJPwQ74E/exec";
 
   // โหลดประเภทกิจการ
   useEffect(() => {
