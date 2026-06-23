@@ -359,7 +359,7 @@ export default function AdminPage() {
                           <div className="border-top pt-3 d-flex justify-content-between align-items-center mt-3">
                             <div>
                               <small className="text-muted d-block" style={{fontSize:'0.75rem'}}>วันที่สิ้นอายุใบอนุญาต</small>
-                              <strong className="text-danger" style={{fontSize: '0.95rem'}}><i className="bi bi-calendar-x"></i> {item.expireDate}</strong>
+                              <strong className="text-danger" style={{fontSize: '0.95rem'}}><i className="bi bi-calendar-x"></i> {item.editExpireDate || item.expireDate || "-"}</strong>
                             </div>
                             <button className="btn btn-sm btn-light text-primary px-3 rounded-pill fw-bold" onClick={() => openManageModal(item.row)}>เรียกดู</button>
                           </div>
