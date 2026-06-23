@@ -345,7 +345,24 @@ export default function AdminPage() {
                 <div className="text-center py-5 bg-white rounded-4 p-5 border"><i className="bi bi-inbox fs-1 text-muted opacity-50"></i><p className="text-muted fw-bold mt-2">ไม่พบรายชื่อผู้ประกอบการที่ผ่านการอนุมัติใบอนุญาต</p></div>
               ) : (
                 <div className="row g-3">
-                  {[...historyRequests].sort((a, b) => b.row - a.row).map((item, index) => (
+                  {[...historyRequests].sort((a, b) => {
+                      // ฟังก์ชันแกะเลขใบอนุญาตออกเป็น [เลขวิ่ง, ปี พ.ศ.]
+                      const parseLicense = (no) => {
+                        if (!no || no === "-" || !no.includes("/")) return { num: 0, year: 0 };
+                        const parts = no.split("/");
+                        return { num: parseInt(parts[0], 10) || 0, year: parseInt(parts[1], 10) || 0 };
+                      };
+
+                      const itemA = parseLicense(a.licenseNo);
+                      const itemB = parseLicense(b.licenseNo);
+
+                      // 1. เรียงตาม ปี พ.ศ. จากมากไปน้อย (ปีใหม่ขึ้นก่อน)
+                      if (itemB.year !== itemA.year) {
+                        return itemB.year - itemA.year;
+                      }
+                      // 2. ถ้าปีเท่ากัน ให้เรียงตาม เลขวิ่ง จากมากไปน้อย (เลขล่าสุดขึ้นก่อน)
+                      return itemB.num - itemA.num;
+                    }).map((item, index) => (
                     <div key={index} className="col-lg-4 col-md-6">
                       <div className="card shadow-sm border-0 h-100 rounded-4 overflow-hidden position-relative" style={{background: '#ffffff'}}>
                         <div className="card-body p-4">
