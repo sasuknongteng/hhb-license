@@ -47,3 +47,16 @@ body {
 .stat-card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.2s; }
 .stat-card:hover { transform: translateY(-5px); }
 .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+/* สไตล์สำหรับ Modal จัดการคำขอและ Stepper */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1050; display: flex; justify-content: center; align-items: center; }
+.modal-custom { background: #fff; width: 95%; max-width: 850px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 95vh; overflow-y: auto; position: relative; }
+.stepper-container { position: relative; display: flex; justify-content: space-between; margin: 2rem 3rem; }
+.stepper-line { position: absolute; top: 50%; left: 0; right: 0; height: 3px; background-color: #e2e8f0; transform: translateY(-50%); z-index: 0; }
+.stepper-line-progress { position: absolute; top: 50%; left: 0; height: 3px; background-color: #4361ee; transform: translateY(-50%); z-index: 0; transition: 0.4s ease; }
+.step-item { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.step-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background-color: #fff; border: 3px solid #e2e8f0; color: #94a3b8; transition: 0.3s; }
+.step-item.active .step-circle { border-color: #4361ee; background-color: #4361ee; color: #fff; box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2); }
+.step-item.completed .step-circle { border-color: #10b981; background-color: #10b981; color: #fff; }
+.step-label { margin-top: 8px; font-size: 0.8rem; font-weight: 600; color: #64748b; }
+.step-item.active .step-label { color: #4361ee; }
+.step-item.completed .step-label { color: #10b981; }
