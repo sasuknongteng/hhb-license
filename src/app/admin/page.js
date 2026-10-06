@@ -391,7 +391,7 @@ export default function AdminPage() {
             </>
           )}
 
-          {/* 🗃️ ส่วนที่ 2.2: แผงควบคุม TAB 2 - แสดงประวัติคำขออนุมัติแล้วแบบโครงสร้าง Cards สวยงาม */}
+         {/* 🗃️ ส่วนที่ 2.2: แผงควบคุม TAB 2 - แสดงประวัติคำขออนุมัติแล้วแบบโครงสร้าง Cards สวยงาม */}
           {activeTab === 'history' && (
             <div>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -406,7 +406,44 @@ export default function AdminPage() {
               ) : (
                 <div className="row g-3">
                   {[...historyRequests].sort((a, b) => {
-                    // 1. จัดเรียงตามเลขใบอนุญาต จากล่าสุดไปเก่าสุด
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    
+                    // ฟังก์ชันคำนวณจำนวนวันที่เหลือ
+                    const getDiffDays = (expireStr) => {
+                      if (!expireStr || expireStr === "-") return Infinity; // ถ้าไม่มีวันที่ ให้ไปอยู่ล่างสุด
+                      let expDate;
+                      if (expireStr.includes("/")) {
+                        const parts = expireStr.split("/");
+                        expDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                      } else {
+                        expDate = new Date(expireStr);
+                      }
+                      expDate.setHours(0,0,0,0);
+                      return Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                    };
+
+                    const diffA = getDiffDays(a.editExpireDate || a.expireDate);
+                    const diffB = getDiffDays(b.editExpireDate || b.expireDate);
+
+                    // แบ่งกลุ่มความสำคัญ: 1=หมดอายุ, 2=ใกล้หมดอายุ, 3=ปกติ, 4=ไม่มีข้อมูล
+                    const getPriority = (diff) => {
+                      if (diff < 0) return 1;
+                      if (diff <= 30) return 2;
+                      if (diff !== Infinity) return 3;
+                      return 4; 
+                    };
+
+                    const prioA = getPriority(diffA);
+                    const prioB = getPriority(diffB);
+
+                    // กฎข้อที่ 1: เรียงตามกลุ่มสถานะ (แดง -> ส้ม -> เขียว)
+                    if (prioA !== prioB) return prioA - prioB;
+
+                    // กฎข้อที่ 2: ในกลุ่มเดียวกัน ให้เรียงตามจำนวนวันที่เหลือ (หมดอายุก่อน/เหลือน้อยกว่า ให้อยู่บน)
+                    if (diffA !== diffB) return diffA - diffB;
+                    
+                    // กฎข้อที่ 3: ถ้าวันหมดอายุตรงกันเป๊ะ ให้เรียงตามเลขที่ใบอนุญาตล่าสุด
                     const parseLicense = (no) => {
                       if (!no || no === "-" || !no.includes("/")) return { num: 0, year: 0 };
                       const parts = no.split("/");
@@ -416,16 +453,16 @@ export default function AdminPage() {
                     const itemB = parseLicense(b.licenseNo);
                     if (itemB.year !== itemA.year) return itemB.year - itemA.year;
                     return itemB.num - itemA.num;
+
                   }).map((item, index) => {
                     
-                    // 2. ฟังก์ชันคำนวณสถานะวันหมดอายุ (🟢 🟠 🔴)
+                    // ฟังก์ชันเตรียมข้อมูลสีและไอคอนสำหรับการแสดงผลการ์ด
                     const expireStr = item.editExpireDate || item.expireDate;
                     let statusColor = "success";
                     let statusText = "ปกติ";
                     let statusIcon = "bi-check-circle-fill";
                     
                     if (expireStr && expireStr !== "-") {
-                      // รองรับทั้งฟอร์แมต YYYY-MM-DD และ DD/MM/YYYY
                       let expDate;
                       if (expireStr.includes("/")) {
                         const parts = expireStr.split("/");
@@ -442,11 +479,11 @@ export default function AdminPage() {
                       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                       
                       if (diffDays < 0) {
-                        statusColor = "danger"; // แดง = หมดอายุ
+                        statusColor = "danger"; // หมดอายุ = แดง
                         statusText = "หมดอายุแล้ว";
                         statusIcon = "bi-x-circle-fill";
                       } else if (diffDays <= 30) {
-                        statusColor = "warning"; // ส้ม = ใกล้หมดอายุ
+                        statusColor = "warning"; // ใกล้หมดอายุ = ส้ม
                         statusText = `ใกล้หมดอายุ (${diffDays} วัน)`;
                         statusIcon = "bi-exclamation-triangle-fill";
                       }
@@ -454,11 +491,9 @@ export default function AdminPage() {
 
                     return (
                       <div key={index} className="col-lg-4 col-md-6">
-                        {/* 🌟 เพิ่มขอบสีด้านซ้าย (border-start) เพื่อให้สีตัดกันเด่นชัด 🌟 */}
                         <div className={`card shadow-sm border-0 h-100 rounded-4 overflow-hidden position-relative border-start border-4 border-${statusColor}`} style={{background: '#ffffff'}}>
                           <div className="card-body p-4">
                             <div className="d-flex justify-content-between align-items-start mb-3">
-                              {/* 🌟 ป้ายสถานะเปลี่ยนสีตามการคำนวณ 🌟 */}
                               <span className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor} fw-bold px-3 py-2 rounded-pill`} style={{fontSize:'0.75rem'}}>
                                 <i className={`bi ${statusIcon} me-1`}></i> {statusText}
                               </span>
@@ -472,7 +507,6 @@ export default function AdminPage() {
                             <div className="border-top pt-3 d-flex justify-content-between align-items-center mt-3">
                               <div>
                                 <small className="text-muted d-block" style={{fontSize:'0.75rem'}}>วันที่สิ้นอายุใบอนุญาต</small>
-                                {/* 🌟 ตัวหนังสือวันหมดอายุเปลี่ยนสีตามสถานะ 🌟 */}
                                 <strong className={`text-${statusColor}`} style={{fontSize: '0.95rem'}}>
                                   <i className="bi bi-calendar-x"></i> {expireStr || "-"}
                                 </strong>
