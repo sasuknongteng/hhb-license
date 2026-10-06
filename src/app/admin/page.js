@@ -31,6 +31,10 @@ export default function AdminPage() {
   const [modalApproveDate, setModalApproveDate] = useState("");
   const [modalExpireDate, setModalExpireDate] = useState("");
   
+  // === ตัวแปรสำหรับแผนที่ ===
+  const mapInstanceRef = import("react").then(() => require("react").useRef(null)).catch(() => {});
+  // (หรือถ้าคุณมี import { useRef } ไว้แล้ว ให้พิมพ์แค่: const mapInstanceRef = useRef(null); )
+  
   // ฟอร์มเก็บข้อมูลค่าธรรมเนียมและเจ้าหน้าที่ตรวจสถานที่
   const [formData, setFormData] = useState({
     editRowNumber: '',
@@ -52,6 +56,62 @@ export default function AdminPage() {
     }
   }, []);
 
+  // === โหลดและวาดแผนที่ GIS ===
+  useEffect(() => {
+    if (activeTab === 'map') {
+      fetch(`${API_URL}?action=getMapData`)
+        .then(res => res.json())
+        .then(locations => {
+          if (typeof window === 'undefined' || !window.L) return;
+
+          // ถ้าเคยมีแผนที่วาดไว้แล้ว ให้ลบของเก่าทิ้งก่อน (ป้องกันบัคแผนที่ซ้อนกัน)
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+          }
+
+          // สร้างแผนที่ใหม่ ซูมไปที่พิกัดตำบลหนองเต็ง (ปรับเลข 14.912, 103.363 ได้ตามต้องการ)
+          const map = window.L.map('admin-map').setView([14.912, 103.363], 13);
+          
+          // ดึงภาพแผนที่ถนนจาก Google Maps
+          window.L.tileLayer('https://{s}.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+          }).addTo(map);
+
+          // นำพิกัดแต่ละจุดมาปักหมุด
+          locations.forEach(loc => {
+            if (loc.lat && loc.lng) {
+              // กำหนดสี: อนุมัติแล้ว=เขียว, รอตรวจสอบ=ส้ม/แดง
+              const isApproved = loc.status.includes('อนุมัติแล้ว');
+              const markerColor = isApproved ? '#10b981' : '#f59e0b'; 
+
+              const marker = window.L.circleMarker([loc.lat, loc.lng], {
+                color: markerColor,
+                fillColor: markerColor,
+                fillOpacity: 0.8,
+                radius: 9, // ขนาดจุด
+                weight: 2
+              }).addTo(map);
+
+              // ข้อความเวลาคลิกที่หมุด (Popup)
+              const popupContent = `
+                <div style="font-family: inherit;">
+                  <strong style="color: #4361ee; font-size: 1.1em;">${loc.businessName}</strong><br/>
+                  <span style="color: ${markerColor}; font-weight: bold;">● ${loc.status}</span><br/>
+                  <small class="text-muted">เลขที่รับเรื่อง/ใบอนุญาต: ${loc.licenseNo}</small>
+                </div>
+              `;
+              marker.bindPopup(popupContent);
+            }
+          });
+
+          mapInstanceRef.current = map;
+        })
+        .catch(err => console.error("โหลดข้อมูลพิกัดไม่สำเร็จ:", err));
+    }
+  }, [activeTab]); // ทำงานใหม่ทุกครั้งที่กด Tab แผนที่
+  
   // === จัดการระบบ Login ===
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -389,12 +449,26 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* 🗺️ ส่วนที่ 2.3: แผงควบคุม TAB 3 - ระบบแผนที่รวมพิกัด (เตรียมไว้สวมสคริปต์เต็มจอ) */}
+          {/* 🗺️ ส่วนที่ 2.3: แผงควบคุม TAB 3 - ระบบแผนที่รวมพิกัด GIS */}
           {activeTab === 'map' && (
-            <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white mt-4">
-              <i className="bi bi-map-fill text-muted mb-3 d-block opacity-25" style={{ fontSize: "4rem" }}></i>
-              <h4 className="text-dark fw-bold">ระบบแผนที่สารสนเทศภูมิศาสตร์ (GIS)</h4>
-              <p className="text-muted mx-auto" style={{maxWidth: '500px'}}>เตรียมเชื่อมพิกัดละติจูด/ลองจิจูดจากตารางทั้งหมดมาปักหมุด แสดงผลแผนที่รวมร้านค้าที่เป็นอันตรายต่อสุขภาพในตําบลหนองเต็ง เร็ว ๆ นี้ 🚧</p>
+            <div className="card shadow-sm border-0 rounded-4 bg-white mt-2 h-100 d-flex flex-column">
+              <div className="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h5 className="fw-bold text-dark mb-0">
+                  <i className="bi bi-geo-alt-fill text-danger me-2"></i>ระบบสารสนเทศภูมิศาสตร์ (GIS) จุดประกอบกิจการ
+                </h5>
+                <div>
+                  <span className="badge bg-success bg-opacity-10 text-success border border-success me-2 px-3 py-2 rounded-pill">
+                    <i className="bi bi-circle-fill me-1"></i> อนุมัติแล้ว
+                  </span>
+                  <span className="badge bg-warning bg-opacity-10 text-warning border border-warning px-3 py-2 rounded-pill">
+                    <i className="bi bi-circle-fill me-1"></i> รอตรวจสอบ/อื่นๆ
+                  </span>
+                </div>
+              </div>
+              
+              <div className="card-body p-0" style={{ height: '65vh', position: 'relative' }}>
+                <div id="admin-map" style={{ width: '100%', height: '100%', zIndex: 1 }}></div>
+              </div>
             </div>
           )}
 
