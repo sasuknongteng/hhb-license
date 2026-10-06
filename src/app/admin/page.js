@@ -30,6 +30,10 @@ export default function AdminPage() {
   const [modalLicenseNo, setModalLicenseNo] = useState("");
   const [modalApproveDate, setModalApproveDate] = useState("");
   const [modalExpireDate, setModalExpireDate] = useState("");
+
+  // === ระบบแก้ไขข้อมูลพื้นฐานกิจการ ===
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [editInfoForm, setEditInfoForm] = useState({ editApplicantName: '', editBusinessName: '', editBusinessType: '' });
   
   // === ตัวแปรสำหรับแผนที่ ===
   const mapInstanceRef = import("react").then(() => require("react").useRef(null)).catch(() => {});
@@ -210,6 +214,13 @@ export default function AdminPage() {
     } finally {
       setModalLoading(false);
     }
+    setReqData(data);
+      // นำข้อมูลเดิมมาใส่ไว้ในฟอร์มเผื่อเจ้าหน้าที่ต้องการแก้ไข
+      setEditInfoForm({
+        editApplicantName: data.applicantName || '',
+        editBusinessName: data.businessName || '',
+        editBusinessType: data.businessType || ''
+      });
   };
 
   const handleFormChange = (e) => {
@@ -565,14 +576,55 @@ export default function AdminPage() {
             ) : (
               <div className="p-4 bg-light" style={{maxHeight:'80vh', overflowY:'auto'}}>
                 
-                {/* แผงข้อมูลร้านค้าและปุ่มคลิกส่องเอกสารแนบ */}
-                <div className="card border-0 shadow-sm mb-4 rounded-3">
+                {/* 📝 แผงข้อมูลร้านค้า และ ระบบแก้ไขข้อมูลกิจการ */}
+                <div className="card border-0 shadow-sm mb-4 rounded-3 border-top border-4 border-primary">
                   <div className="card-body p-4">
-                    <div className="row g-3">
-                      <div className="col-md-6"><small className="text-muted d-block">ชื่อผู้ยื่นคำขออนุญาต</small><strong className="text-dark fs-5">{reqData?.applicantName}</strong></div>
-                      <div className="col-md-6"><small className="text-muted d-block">ชื่อสถานประกอบการป้ายร้าน</small><strong className="text-primary fs-5">{reqData?.businessName}</strong></div>
-                      <div className="col-12 mt-2"><small className="text-muted d-block">ประเภทกลุ่มกิจการ</small><span className="badge bg-secondary bg-opacity-10 text-secondary fw-medium p-2 mt-1 rounded">{reqData?.businessType}</span></div>
+                    <div className="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 className="fw-bold text-dark mb-0"><i className="bi bi-shop me-2"></i>ข้อมูลพื้นฐานสถานประกอบการ</h6>
+                      <button className="btn btn-sm btn-outline-primary rounded-pill px-3" onClick={() => setIsEditingInfo(!isEditingInfo)}>
+                        {isEditingInfo ? <><i className="bi bi-x-circle"></i> ยกเลิกแก้ไข</> : <><i className="bi bi-pencil-square"></i> แก้ไขข้อมูล</>}
+                      </button>
                     </div>
+
+                    {isEditingInfo ? (
+                      // 🔴 โหมดแก้ไขข้อมูล
+                      <div className="row g-3 bg-light p-3 rounded">
+                        <div className="col-md-6">
+                          <label className="form-label small fw-bold">ชื่อผู้ยื่นคำขอ</label>
+                          <input type="text" className="form-control" value={editInfoForm.editApplicantName} onChange={(e) => setEditInfoForm({...editInfoForm, editApplicantName: e.target.value})} />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label small fw-bold">ชื่อสถานประกอบการ</label>
+                          <input type="text" className="form-control text-primary fw-bold" value={editInfoForm.editBusinessName} onChange={(e) => setEditInfoForm({...editInfoForm, editBusinessName: e.target.value})} />
+                        </div>
+                        <div className="col-12">
+                          <label className="form-label small fw-bold">ประเภทกิจการ</label>
+                          <input type="text" className="form-control" value={editInfoForm.editBusinessType} onChange={(e) => setEditInfoForm({...editInfoForm, editBusinessType: e.target.value})} />
+                        </div>
+                        <div className="col-12 text-end mt-3">
+                          <button className="btn btn-primary btn-sm px-4 rounded-pill fw-bold" onClick={async () => {
+                            setIsLoading(true);
+                            await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "updateBasicInfo", formObject: { ...editInfoForm, editRowNumber: reqData.row } }) });
+                            setReqData({...reqData, applicantName: editInfoForm.editApplicantName, businessName: editInfoForm.editBusinessName, businessType: editInfoForm.editBusinessType});
+                            setIsEditingInfo(false);
+                            setIsLoading(false);
+                            loadAllData();
+                            alert("อัปเดตข้อมูลพื้นฐานเรียบร้อย!");
+                          }}>
+                            {isLoading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // 🔵 โหมดแสดงผลปกติ
+                      <div className="row g-3">
+                        <div className="col-md-6"><small className="text-muted d-block">ชื่อผู้ยื่นคำขออนุญาต</small><strong className="text-dark fs-5">{reqData?.applicantName}</strong></div>
+                        <div className="col-md-6"><small className="text-muted d-block">ชื่อสถานประกอบการป้ายร้าน</small><strong className="text-primary fs-5">{reqData?.businessName}</strong></div>
+                        <div className="col-12 mt-2"><small className="text-muted d-block">ประเภทกลุ่มกิจการ</small><span className="badge bg-secondary bg-opacity-10 text-secondary fw-medium p-2 mt-1 rounded">{reqData?.businessType}</span></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                     
                     {/* ชุดปุ่มกดเปิดส่องดูลิงก์เอกสารแนบจาก Google Drive */}
                     <div className="mt-4 pt-3 border-top">
