@@ -406,44 +406,84 @@ export default function AdminPage() {
               ) : (
                 <div className="row g-3">
                   {[...historyRequests].sort((a, b) => {
-                      // ฟังก์ชันแกะเลขใบอนุญาตออกเป็น [เลขวิ่ง, ปี พ.ศ.]
-                      const parseLicense = (no) => {
-                        if (!no || no === "-" || !no.includes("/")) return { num: 0, year: 0 };
-                        const parts = no.split("/");
-                        return { num: parseInt(parts[0], 10) || 0, year: parseInt(parts[1], 10) || 0 };
-                      };
-
-                      const itemA = parseLicense(a.licenseNo);
-                      const itemB = parseLicense(b.licenseNo);
-
-                      // 1. เรียงตาม ปี พ.ศ. จากมากไปน้อย (ปีใหม่ขึ้นก่อน)
-                      if (itemB.year !== itemA.year) {
-                        return itemB.year - itemA.year;
+                    // 1. จัดเรียงตามเลขใบอนุญาต จากล่าสุดไปเก่าสุด
+                    const parseLicense = (no) => {
+                      if (!no || no === "-" || !no.includes("/")) return { num: 0, year: 0 };
+                      const parts = no.split("/");
+                      return { num: parseInt(parts[0], 10) || 0, year: parseInt(parts[1], 10) || 0 };
+                    };
+                    const itemA = parseLicense(a.licenseNo);
+                    const itemB = parseLicense(b.licenseNo);
+                    if (itemB.year !== itemA.year) return itemB.year - itemA.year;
+                    return itemB.num - itemA.num;
+                  }).map((item, index) => {
+                    
+                    // 2. ฟังก์ชันคำนวณสถานะวันหมดอายุ (🟢 🟠 🔴)
+                    const expireStr = item.editExpireDate || item.expireDate;
+                    let statusColor = "success";
+                    let statusText = "ปกติ";
+                    let statusIcon = "bi-check-circle-fill";
+                    
+                    if (expireStr && expireStr !== "-") {
+                      // รองรับทั้งฟอร์แมต YYYY-MM-DD และ DD/MM/YYYY
+                      let expDate;
+                      if (expireStr.includes("/")) {
+                        const parts = expireStr.split("/");
+                        expDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                      } else {
+                        expDate = new Date(expireStr);
                       }
-                      // 2. ถ้าปีเท่ากัน ให้เรียงตาม เลขวิ่ง จากมากไปน้อย (เลขล่าสุดขึ้นก่อน)
-                      return itemB.num - itemA.num;
-                    }).map((item, index) => (
-                    <div key={index} className="col-lg-4 col-md-6">
-                      <div className="card shadow-sm border-0 h-100 rounded-4 overflow-hidden position-relative" style={{background: '#ffffff'}}>
-                        <div className="card-body p-4">
-                          <div className="d-flex justify-content-between align-items-start mb-3">
-                            <span className="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill" style={{fontSize:'0.75rem'}}>ออกใบอนุญาตแล้ว</span>
-                            <small className="text-muted small"><i className="bi bi-calendar2-check"></i> {item.approveDate}</small>
-                          </div>
-                          <h6 className="text-primary fw-bold mb-1" style={{fontSize: '0.85rem'}}>เลขที่ใบอนุญาต: {item.licenseNo}</h6>
-                          <h5 className="fw-bold text-dark text-truncate mb-2">{item.businessName}</h5>
-                          <p className="text-muted small mb-3 text-truncate"><i className="bi bi-person me-1"></i>ผู้รับใบอนุญาต: {item.applicantName}</p>
-                          <div className="border-top pt-3 d-flex justify-content-between align-items-center mt-3">
-                            <div>
-                              <small className="text-muted d-block" style={{fontSize:'0.75rem'}}>วันที่สิ้นอายุใบอนุญาต</small>
-                              <strong className="text-danger" style={{fontSize: '0.95rem'}}><i className="bi bi-calendar-x"></i> {item.editExpireDate || item.expireDate || "-"}</strong>
+                      
+                      const today = new Date();
+                      today.setHours(0,0,0,0);
+                      expDate.setHours(0,0,0,0);
+                      
+                      const diffTime = expDate - today;
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays < 0) {
+                        statusColor = "danger"; // แดง = หมดอายุ
+                        statusText = "หมดอายุแล้ว";
+                        statusIcon = "bi-x-circle-fill";
+                      } else if (diffDays <= 30) {
+                        statusColor = "warning"; // ส้ม = ใกล้หมดอายุ
+                        statusText = `ใกล้หมดอายุ (${diffDays} วัน)`;
+                        statusIcon = "bi-exclamation-triangle-fill";
+                      }
+                    }
+
+                    return (
+                      <div key={index} className="col-lg-4 col-md-6">
+                        {/* 🌟 เพิ่มขอบสีด้านซ้าย (border-start) เพื่อให้สีตัดกันเด่นชัด 🌟 */}
+                        <div className={`card shadow-sm border-0 h-100 rounded-4 overflow-hidden position-relative border-start border-4 border-${statusColor}`} style={{background: '#ffffff'}}>
+                          <div className="card-body p-4">
+                            <div className="d-flex justify-content-between align-items-start mb-3">
+                              {/* 🌟 ป้ายสถานะเปลี่ยนสีตามการคำนวณ 🌟 */}
+                              <span className={`badge bg-${statusColor} bg-opacity-10 text-${statusColor} fw-bold px-3 py-2 rounded-pill`} style={{fontSize:'0.75rem'}}>
+                                <i className={`bi ${statusIcon} me-1`}></i> {statusText}
+                              </span>
+                              <small className="text-muted small"><i className="bi bi-calendar2-check"></i> {item.approveDate}</small>
                             </div>
-                            <button className="btn btn-sm btn-light text-primary px-3 rounded-pill fw-bold" onClick={() => openManageModal(item.row)}>เรียกดู</button>
+                            
+                            <h6 className="text-primary fw-bold mb-1" style={{fontSize: '0.85rem'}}>เลขที่ใบอนุญาต: {item.licenseNo}</h6>
+                            <h5 className="fw-bold text-dark text-truncate mb-2" title={item.businessName}>{item.businessName}</h5>
+                            <p className="text-muted small mb-3 text-truncate"><i className="bi bi-person me-1"></i>ผู้รับใบอนุญาต: {item.applicantName}</p>
+                            
+                            <div className="border-top pt-3 d-flex justify-content-between align-items-center mt-3">
+                              <div>
+                                <small className="text-muted d-block" style={{fontSize:'0.75rem'}}>วันที่สิ้นอายุใบอนุญาต</small>
+                                {/* 🌟 ตัวหนังสือวันหมดอายุเปลี่ยนสีตามสถานะ 🌟 */}
+                                <strong className={`text-${statusColor}`} style={{fontSize: '0.95rem'}}>
+                                  <i className="bi bi-calendar-x"></i> {expireStr || "-"}
+                                </strong>
+                              </div>
+                              <button className="btn btn-sm btn-light text-primary px-3 rounded-pill fw-bold" onClick={() => openManageModal(item.row)}>เรียกดู</button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
